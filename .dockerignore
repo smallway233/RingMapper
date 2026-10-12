@@ -1,0 +1,11 @@
+.git
+.github
+node_modules
+dist
+Map
+.ringmapper-backups
+test-results
+playwright-report
+.env
+*.log
+.DS_Store

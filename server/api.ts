@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import JSZip from 'jszip';
 import { decodeText, readYaml, writeYaml, validateChart, sortedProject, updateMetadata, type Project, type Song, type ChartEntry } from '../src/model';
+import { authUrl, clearSession, exchangeCode, loginRequired, picoConfigured, readSession, redirect, safeLoginError, writeSession } from './pico-auth';
 const ROOT = path.resolve('Map');
 const BACKUPS = path.resolve('.ringmapper-backups');
 export function safePath(root: string, relative: string) {
@@ -36,8 +37,10 @@ async function revision(dir: string, files: string[]) {
   return hash.digest('hex');
 }
 let catalogCache: Song[] | undefined;
+async function ensureRoot() { await fs.mkdir(ROOT, { recursive: true }); }
 export async function catalog(): Promise<Song[]> {
   if (catalogCache) return catalogCache;
+  await ensureRoot();
   const dirs = await fs.readdir(ROOT, { withFileTypes: true });
   const results = await Promise.all(dirs.filter(d => d.isDirectory() && !d.isSymbolicLink()).map(async d => {
     try {
@@ -112,6 +115,7 @@ async function save(input: Project & { assets?: Record<string, string> }) {
   } finally { locks.delete(dir); }
 }
 export async function workspaceFolder(songId = '') {
+  await ensureRoot();
   const folder = songId ? await checked(ROOT, songId) : ROOT;
   if (!(await fs.stat(folder)).isDirectory()) throw new Error('谱面目录不存在');
   return folder;
@@ -130,7 +134,32 @@ async function handler(req: IncomingMessage, res: ServerResponse, next: () => vo
   if (!url.pathname.startsWith('/api/')) return next();
   const json = (data: unknown, status = 200) => { res.statusCode = status; res.setHeader('Content-Type', 'application/json; charset=utf-8'); res.end(JSON.stringify(data)); };
   try {
+    if (url.pathname === '/api/auth/pico/login' && req.method === 'GET') {
+      if (!picoConfigured()) return redirect(res, '/');
+      return redirect(res, authUrl(req));
+    }
+    if (url.pathname === '/api/auth/pico/callback' && req.method === 'GET') {
+      if (!picoConfigured()) return redirect(res, '/');
+      const providerError = url.searchParams.get('error');
+      if (providerError) return redirect(res, `/?login_error=${safeLoginError(providerError)}`);
+      const code = url.searchParams.get('code') ?? '';
+      if (!code) return redirect(res, '/?login_error=missing_code');
+      try {
+        writeSession(res, await exchangeCode(code));
+      } catch {
+        console.error('PICO 换票失败');
+        return redirect(res, '/?login_error=exchange_failed');
+      }
+      return redirect(res, '/');
+    }
     if (req.headers.origin && new URL(req.headers.origin).host !== req.headers.host) return json({ error: '不接受跨站请求' }, 403);
+    if (url.pathname === '/api/auth/me' && req.method === 'GET') {
+      return json({ user: readSession(req), loginRequired: loginRequired(), configured: picoConfigured() });
+    }
+    if (url.pathname === '/api/auth/logout' && req.method === 'POST') {
+      clearSession(res);
+      return json({ ok: true });
+    }
     if (url.pathname === '/api/open-folder' && req.method === 'POST') { const input = await body(req); if (typeof input.song !== 'string') throw new Error('歌曲目录参数不合法'); return json(await openFolder(input.song)); }
     if (url.pathname === '/api/catalog' && req.method === 'GET') return json(await catalog());
     const id = url.searchParams.get('song') ?? '';

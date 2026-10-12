@@ -502,3 +502,18 @@ dialog.tutorial-dialog { width: min(960px, calc(100vw - var(--sidebar) - 40px));
 .tutorial-footer span { flex: 1; color: #87a99b; }
 .tutorial-footer button:disabled { opacity: .3; cursor: not-allowed; }
 @media(max-width:1000px) { .tutorial-layout { grid-template-columns: 1fr; } .tutorial-layout nav { flex-direction: row; flex-wrap: wrap; gap: 4px; } .tutorial-layout nav button { font-size: 10px; padding: 5px; } .tutorial-article { max-height: calc(100vh - 330px); } }
+.account{display:flex;align-items:center;gap:8px;padding:0 8px 0 4px;border:1px solid var(--line);border-radius:999px;background:#1a232a;max-width:220px}
+.account img{width:22px;height:22px;border-radius:50%;object-fit:cover}
+#account-name{font-size:11px;color:#d5e6e2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.account button{border:0;background:transparent;padding:6px;color:#8ea3ab}
+.login-gate{position:fixed;inset:0;z-index:40;display:grid;place-items:center;padding:24px;background:radial-gradient(900px 480px at 50% 0%,#1c3330 0%,#101418 55%)}
+.login-gate[hidden]{display:none}
+.login-card{width:min(440px,100%);padding:36px 32px 32px;border:1px solid #31443e;border-radius:16px;background:#151c22ee;text-align:center;box-shadow:0 24px 80px #0008}
+.login-card .brand-mark{font-size:52px}
+.login-kicker{margin:8px 0 0;letter-spacing:.42em;font-size:11px;color:#7f9c93}
+.login-card h1{margin:14px 0 10px;font-size:26px;font-weight:560;letter-spacing:.4px}
+.login-card p{margin:0 auto 22px;max-width:34em;color:#8ea3ab;font-size:13px;line-height:1.8}
+.login-card a.primary{display:inline-flex;align-items:center;justify-content:center;min-width:180px;padding:12px 18px;border-radius:8px;background:var(--mint);color:#173d30;font-weight:650;text-decoration:none}
+.login-card a.primary:hover{background:#d3ffe9}
+.login-error{margin:16px 0 0 !important;color:#ffb4bc !important;font-size:12px !important}
+body:not(.editor-ready) .workspace{visibility:hidden}

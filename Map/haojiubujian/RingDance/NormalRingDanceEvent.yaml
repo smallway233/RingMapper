@@ -1,5 +1,0 @@
-version: 2.3.0
-events:
-  - time: 0
-    type: 1
-    value: 1
